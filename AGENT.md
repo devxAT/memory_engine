@@ -78,8 +78,8 @@ Use this checklist to track implementation progress across the project.
 
 ### Phase 1: Compaction Engine (Current Phase)
 - [x] **Core Types & Interfaces**: `types.ts` defining `MessageAccessor`, session entries (message, compaction, prune), settings, `ModelBudget`, and errors.
-- [ ] **Test Fixture Accessors**: in-repo test message type covering separate tool-result messages, results inside user messages with injected text, and server-side tool calls.
-- [ ] **Token Measurement**: `tokens.ts` with heuristic estimator and usage-aware context measurement.
+- [x] **Test Fixture Accessors**: in-repo test message type covering separate tool-result messages, results inside user messages with injected text, and server-side tool calls.
+- [x] **Token Measurement**: `tokens.ts` with heuristic estimator and usage-aware context measurement.
 - [ ] **Tool Pairing & Cut Points**: `groups.ts` pairing calls with results by ID.
 - [ ] **Pluggable Extraction Layer**:
   - [ ] `ExtractorRegistry` and `ExtractorPlugin<S>` interfaces.
