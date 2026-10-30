@@ -293,6 +293,8 @@ estimate(msg) = accessor.estimateTokens?.(msg)
 ```
 The per-image constant is tunable. Opaque content (e.g. thinking) is not counted, so usage-based measurement is preferred whenever available.
 
+Plain text (summaries, serialized transcripts) uses `estimateText(s) = ceil(s.length / 4)`.
+
 ### 4.2 Context Measurement
 `measure(path, budget)` measures the context exactly as `buildContext` would produce it:
 1. Find the last message on the context path whose `getUsage` returns a value.
@@ -791,9 +793,13 @@ export interface CompactionEngineDeps<TMsg> {
   accessor: MessageAccessor<TMsg>;
   summarize: SummarizerFn;
   extractors?: ExtractorPlugin[];             // default: [new FileOpsExtractor()]
-  settings?: Partial<CompactionSettings>;     // merged over defaults; `micro` merged one level deep
+  settings?: CompactionSettingsInput;         // merged over defaults; `micro` merged one level deep
   summarizerLabel?: string;
 }
+
+export type CompactionSettingsInput = Partial<Omit<CompactionSettings, "micro">> & {
+  micro?: Partial<CompactionSettings["micro"]>;
+};
 
 export class CompactionEngine<TMsg> {
   constructor(deps: CompactionEngineDeps<TMsg>);

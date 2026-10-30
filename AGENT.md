@@ -21,19 +21,22 @@ Key capabilities:
 
 ---
 
-## Toolchain & Conventions (Proposed: confirm before scaffolding)
-
-Nothing is scaffolded yet. These are the proposed defaults:
+## Toolchain & Conventions
 
 - **Runtime**: Node.js ≥ 22 (LTS), ES modules (`"type": "module"`).
-- **TypeScript**: strict, `module`/`moduleResolution: "NodeNext"`, target ES2022. Relative imports use the `.js` extension.
+- **TypeScript**: strict, `module`/`moduleResolution: "NodeNext"`, target ES2022, `verbatimModuleSyntax` (use `import type` for type-only imports). Relative imports use the `.js` extension.
+  - `tsconfig.json`: type-checks `src/`, `test/`, and config files; never emits.
+  - `tsconfig.build.json`: compiles `src/` only to `dist/` with declarations.
 - **Package manager**: npm.
 - **Tests**: Vitest. Tests live in `test/`, mirroring `src/`. Shared fixtures (e.g. test message accessors) live in `test/fixtures/`.
+- **Lint / format**: Biome (`biome.json`): 2-space indent, double quotes, semicolons, trailing commas, 100-column lines, recommended lint rules, organized imports. Markdown files are excluded.
 - **Commands**:
-  - `npm run build`: compile with `tsc`.
+  - `npm run build`: compile with `tsc -p tsconfig.build.json`.
   - `npm run typecheck`: `tsc --noEmit`.
   - `npm test`: `vitest run`.
-- **Lint / format**: to be decided.
+  - `npm run lint`: `biome check` (format + lint + import order; fails on any issue).
+  - `npm run lint:fix`: `biome check --write` (applies safe fixes and formatting).
+  - `npm run format`: `biome format --write`.
 - **Code conventions**:
   - No runtime dependencies.
   - Named exports only.
@@ -62,10 +65,10 @@ The following topics are staged for upcoming discussions:
 - **Session Header & Message Format Versioning** (Phase 2): the header line that records the host message format and version, and how hosts migrate old sessions.
 - **Session Tree Branching Mechanics**: Traversals, fork points, and resolving paths from leaves to roots.
 - **Reference Accessors**: whether to ship optional `MessageAccessor` implementations for common host formats, and which ones first.
-- **Toolchain Confirmation**: confirm or adjust the proposed toolchain above before scaffolding.
 
 Resolved:
 - ~~Canonical Message Representation~~: the engine does not define a message schema. Host messages are stored as-is and read through a `MessageAccessor` (see [docs/compaction-changes.md](docs/compaction-changes.md)).
+- ~~Toolchain Confirmation~~: confirmed as proposed, with Biome chosen for lint/format (see Toolchain & Conventions).
 
 ---
 

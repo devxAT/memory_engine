@@ -1,0 +1,2 @@
+# Keep LF in the working tree regardless of core.autocrlf (Biome formats with LF).
+* text=auto eol=lf
