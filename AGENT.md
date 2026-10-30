@@ -80,10 +80,10 @@ Use this checklist to track implementation progress across the project.
 - [x] **Core Types & Interfaces**: `types.ts` defining `MessageAccessor`, session entries (message, compaction, prune), settings, `ModelBudget`, and errors.
 - [x] **Test Fixture Accessors**: in-repo test message type covering separate tool-result messages, results inside user messages with injected text, and server-side tool calls.
 - [x] **Token Measurement**: `tokens.ts` with heuristic estimator and usage-aware context measurement.
-- [ ] **Tool Pairing & Cut Points**: `groups.ts` pairing calls with results by ID.
-- [ ] **Pluggable Extraction Layer**:
-  - [ ] `ExtractorRegistry` and `ExtractorPlugin<S>` interfaces.
-  - [ ] Default `FileOpsExtractor` (configurable tool names and path keys, path normalization, failed calls ignored).
+- [x] **Tool Pairing & Cut Points**: `groups.ts` pairing calls with results by ID.
+- [x] **Pluggable Extraction Layer**:
+  - [x] `ExtractorRegistry` and `ExtractorPlugin<S>` interfaces.
+  - [x] Default `FileOpsExtractor` (configurable tool names and path keys, path normalization, failed calls ignored).
 - [ ] **Stage 1: Micro-Compaction**:
   - [ ] Tool result pruner with eviction stubs (head/tail lines, character cap, long lines, images).
   - [ ] `ProactiveMicroStrategy` (prunes results as they age out of the recent window).
