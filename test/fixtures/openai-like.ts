@@ -156,6 +156,17 @@ export const oa = {
     return msg;
   },
 
+  /** An assistant message with one call, followed by its result. */
+  toolTurn(
+    id: string,
+    name: string,
+    args: Record<string, unknown>,
+    output: string | OaPart[],
+    isError = false,
+  ): OaMessage[] {
+    return [oa.assistant(null, [oa.call(id, name, args)]), oa.tool(id, output, isError)];
+  },
+
   text: (text: string): OaPart => ({ type: "text", text }),
 
   image: (url = "data:image/png;base64,AAAA"): OaPart => ({

@@ -84,11 +84,11 @@ Use this checklist to track implementation progress across the project.
 - [x] **Pluggable Extraction Layer**:
   - [x] `ExtractorRegistry` and `ExtractorPlugin<S>` interfaces.
   - [x] Default `FileOpsExtractor` (configurable tool names and path keys, path normalization, failed calls ignored).
-- [ ] **Stage 1: Micro-Compaction**:
-  - [ ] Tool result pruner with eviction stubs (head/tail lines, character cap, long lines, images).
-  - [ ] `ProactiveMicroStrategy` (prunes results as they age out of the recent window).
-  - [ ] `ReactiveMicroStrategy` (threshold-triggered pruning with a target ratio).
-  - [ ] Pruning decisions emitted as `prune` entries.
+- [x] **Stage 1: Micro-Compaction**:
+  - [x] Tool result pruner with eviction stubs (head/tail lines, character cap, long lines, images).
+  - [x] `ProactiveMicroStrategy` (prunes results as they age out of the recent window).
+  - [x] `ReactiveMicroStrategy` (threshold-triggered pruning with a target ratio).
+  - [x] Pruning decisions emitted as `prune` entries.
 - [ ] **Stage 2: Macro-Compaction**:
   - [ ] Cut-point detector with atomic toolCall/toolResult boundary guarantees.
   - [ ] Turn boundary detection & split-turn bifurcation.
