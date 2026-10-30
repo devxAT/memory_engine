@@ -28,7 +28,7 @@ Key capabilities:
   - `tsconfig.json`: type-checks `src/`, `test/`, and config files; never emits.
   - `tsconfig.build.json`: compiles `src/` only to `dist/` with declarations.
 - **Package manager**: npm.
-- **Tests**: Vitest. Tests live in `test/`, mirroring `src/`. Shared fixtures (e.g. test message accessors) live in `test/fixtures/`.
+- **Tests**: Vitest. Tests live in `test/`, mirroring `src/`. Shared fixtures (e.g. test message accessors) live in `test/fixtures/`. Type-level assertions (`expectTypeOf`) are no-ops at runtime; `npm run typecheck` is what verifies them.
 - **Lint / format**: Biome (`biome.json`): 2-space indent, double quotes, semicolons, trailing commas, 100-column lines, recommended lint rules, organized imports. Markdown files are excluded.
 - **Commands**:
   - `npm run build`: compile with `tsc -p tsconfig.build.json`.
@@ -77,7 +77,7 @@ Resolved:
 Use this checklist to track implementation progress across the project.
 
 ### Phase 1: Compaction Engine (Current Phase)
-- [ ] **Core Types & Interfaces**: `types.ts` defining `MessageAccessor`, session entries (message, compaction, prune), settings, `ModelBudget`, and errors.
+- [x] **Core Types & Interfaces**: `types.ts` defining `MessageAccessor`, session entries (message, compaction, prune), settings, `ModelBudget`, and errors.
 - [ ] **Test Fixture Accessors**: in-repo test message type covering separate tool-result messages, results inside user messages with injected text, and server-side tool calls.
 - [ ] **Token Measurement**: `tokens.ts` with heuristic estimator and usage-aware context measurement.
 - [ ] **Tool Pairing & Cut Points**: `groups.ts` pairing calls with results by ID.
