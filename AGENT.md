@@ -89,16 +89,16 @@ Use this checklist to track implementation progress across the project.
   - [x] `ProactiveMicroStrategy` (prunes results as they age out of the recent window).
   - [x] `ReactiveMicroStrategy` (threshold-triggered pruning with a target ratio).
   - [x] Pruning decisions emitted as `prune` entries.
-- [ ] **Stage 2: Macro-Compaction**:
-  - [ ] Cut-point detector with atomic toolCall/toolResult boundary guarantees.
-  - [ ] Turn boundary detection & split-turn bifurcation.
-  - [ ] Conversation serializer (text transcript for the summarizer).
-  - [ ] Prompt templates (`SUMMARIZATION_PROMPT`, `UPDATE_SUMMARIZATION_PROMPT`, `TURN_PREFIX_SUMMARIZATION_PROMPT`) and `PROMPT_VERSION`.
-  - [ ] Summarizer using the injected host LLM function (chunking, validation, retry, abort).
-- [ ] **Compaction Topology**: `RollingDeltaCompactor` (single rolling summary with iterative updates).
-- [ ] **Context Builder**: `context.ts` assembling summary + kept window + prune replacements.
-- [ ] **Engine Facade**: `engine.ts` with threshold trigger, micro → macro order, and overflow retry.
-- [ ] **Compaction Unit Tests**: Deterministic test suites verifying boundaries, pruners, extractors, and the topology.
+- [x] **Stage 2: Macro-Compaction**:
+  - [x] Cut-point detector with atomic toolCall/toolResult boundary guarantees.
+  - [x] Turn boundary detection & split-turn bifurcation.
+  - [x] Conversation serializer (text transcript for the summarizer).
+  - [x] Prompt templates (`SUMMARIZATION_PROMPT`, `UPDATE_SUMMARIZATION_PROMPT`, `TURN_PREFIX_SUMMARIZATION_PROMPT`) and `PROMPT_VERSION`.
+  - [x] Summarizer using the injected host LLM function (chunking, validation, retry, abort).
+- [x] **Compaction Topology**: `RollingDeltaCompactor` (single rolling summary with iterative updates).
+- [x] **Context Builder**: `context.ts` assembling summary + kept window + prune replacements.
+- [x] **Engine Facade**: `engine.ts` with threshold trigger, micro → macro order, and overflow retry.
+- [x] **Compaction Unit Tests**: Deterministic test suites verifying boundaries, pruners, extractors, and the topology.
 
 ### Phase 1b: Evaluation & Hierarchical Topology (Deferred)
 - [ ] Evaluation harness: replay recorded sessions; measure tokens saved, summarizer cost, cache hit rate, continuation quality.
