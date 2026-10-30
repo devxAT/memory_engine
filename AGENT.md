@@ -7,8 +7,9 @@
 Key capabilities:
 - **Two-Tier Context Compaction**: Fast, deterministic micro-pruning of bulky tool outputs combined with macro semantic summarization.
 - **Append-Only Tree Session Storage**: Branching, tree-structured JSONL persistence preserving full conversation graphs.
+- **Host-Native Messages**: Each host's own message type is stored unchanged. The engine reads it through an injected `MessageAccessor`, so nothing is lost in conversion.
 - **Deterministic State Tracking**: Pluggable tracking of touched files, shell states, and execution artifacts stored directly in session metadata.
-- **Zero Framework / SDK Coupling**: Pluggable LLM summarizers, token estimators, and tool extractors injected by host agents via dependency injection.
+- **Zero Framework / SDK Coupling**: The host injects its message accessor, LLM summarizer, and optional token usage/estimation via dependency injection.
 
 ---
 
@@ -16,7 +17,29 @@ Key capabilities:
 
 - **Language**: TypeScript (strict mode, Node.js / ES modules).
 - **Dependencies**: Minimal to zero runtime dependencies. No direct SDK dependencies (no `@anthropic-ai/sdk`, `openai`, `@google/genai`, or `@mariozechner/pi-ai`). Host projects inject their own LLM completion and tokenizer functions.
-- **Storage**: Append-only JSONL files representing tree-structured session nodes.
+- **Storage**: Append-only JSONL files representing tree-structured session nodes. Messages are stored in the host's own format.
+
+---
+
+## Toolchain & Conventions (Proposed: confirm before scaffolding)
+
+Nothing is scaffolded yet. These are the proposed defaults:
+
+- **Runtime**: Node.js ≥ 22 (LTS), ES modules (`"type": "module"`).
+- **TypeScript**: strict, `module`/`moduleResolution: "NodeNext"`, target ES2022. Relative imports use the `.js` extension.
+- **Package manager**: npm.
+- **Tests**: Vitest. Tests live in `test/`, mirroring `src/`. Shared fixtures (e.g. test message accessors) live in `test/fixtures/`.
+- **Commands**:
+  - `npm run build`: compile with `tsc`.
+  - `npm run typecheck`: `tsc --noEmit`.
+  - `npm test`: `vitest run`.
+- **Lint / format**: to be decided.
+- **Code conventions**:
+  - No runtime dependencies.
+  - Named exports only.
+  - Prefer pure functions over classes where state is not needed.
+  - Never mutate host messages; copy via the accessor.
+  - Tests must be deterministic; LLM calls are always faked.
 
 ---
 
@@ -26,6 +49,7 @@ Key capabilities:
 | :--- | :--- | :--- |
 | `AGENT.md` | Primary entry point for agents. Summarizes goals, guidelines, open topics, and implementation tracking. | Agents & Developers |
 | [docs/compaction.md](docs/compaction.md) | Research findings, comparative analysis of agents (Pi, Claude Code, Codex), and foundational compaction principles. | Human readers & Agents |
+| [docs/compaction-changes.md](docs/compaction-changes.md) | What changed in the compaction docs after review, and why. | Human readers & Agents |
 | [architecture/compaction.md](architecture/compaction.md) | Exhaustive technical specification, interfaces, algorithms, and implementation instructions for the compaction engine. | Implementing Agents |
 | `docs/session.md` | *(Planned)* Research and specifications for the session tree and branch management. | Human readers & Agents |
 | `architecture/session.md` | *(Planned)* Technical implementation specification for the session manager and context hydration layer. | Implementing Agents |
@@ -35,8 +59,13 @@ Key capabilities:
 ## Open Architectural Discussion Points
 
 The following topics are staged for upcoming discussions:
-- **Canonical Message Representation in Session JSONL**: Standardizing JSON keys and schema across different host agent models (`role`, `content`, `toolCalls`, `toolResults`, custom metadata) during the session manager architectural review.
-- **Session Tree Branching Mechanics**: Traversals, fork points, and hydration paths from leaves to roots.
+- **Session Header & Message Format Versioning** (Phase 2): the header line that records the host message format and version, and how hosts migrate old sessions.
+- **Session Tree Branching Mechanics**: Traversals, fork points, and resolving paths from leaves to roots.
+- **Reference Accessors**: whether to ship optional `MessageAccessor` implementations for common host formats, and which ones first.
+- **Toolchain Confirmation**: confirm or adjust the proposed toolchain above before scaffolding.
+
+Resolved:
+- ~~Canonical Message Representation~~: the engine does not define a message schema. Host messages are stored as-is and read through a `MessageAccessor` (see [docs/compaction-changes.md](docs/compaction-changes.md)).
 
 ---
 
@@ -45,25 +74,34 @@ The following topics are staged for upcoming discussions:
 Use this checklist to track implementation progress across the project.
 
 ### Phase 1: Compaction Engine (Current Phase)
-- [ ] **Core Types & Interfaces**: `types.ts` defining generic messages, token options, and compaction entries.
+- [ ] **Core Types & Interfaces**: `types.ts` defining `MessageAccessor`, session entries (message, compaction, prune), settings, `ModelBudget`, and errors.
+- [ ] **Test Fixture Accessors**: in-repo test message type covering separate tool-result messages, results inside user messages with injected text, and server-side tool calls.
+- [ ] **Token Measurement**: `tokens.ts` with heuristic estimator and usage-aware context measurement.
+- [ ] **Tool Pairing & Cut Points**: `groups.ts` pairing calls with results by ID.
 - [ ] **Pluggable Extraction Layer**:
-  - [ ] `ExtractorRegistry` and `ExtractorPlugin` interfaces.
-  - [ ] Default `FileOpsExtractor` (configurable tool names and path keys).
+  - [ ] `ExtractorRegistry` and `ExtractorPlugin<S>` interfaces.
+  - [ ] Default `FileOpsExtractor` (configurable tool names and path keys, path normalization, failed calls ignored).
 - [ ] **Stage 1: Micro-Compaction**:
-  - [ ] Tool result pruner with eviction stubs.
-  - [ ] `ProactiveMicroStrategy` (per-turn / sliding-window tool pruning).
-  - [ ] `ReactiveMicroStrategy` (threshold-triggered tool pruning).
+  - [ ] Tool result pruner with eviction stubs (head/tail lines, character cap, long lines, images).
+  - [ ] `ProactiveMicroStrategy` (prunes results as they age out of the recent window).
+  - [ ] `ReactiveMicroStrategy` (threshold-triggered pruning with a target ratio).
+  - [ ] Pruning decisions emitted as `prune` entries.
 - [ ] **Stage 2: Macro-Compaction**:
   - [ ] Cut-point detector with atomic toolCall/toolResult boundary guarantees.
   - [ ] Turn boundary detection & split-turn bifurcation.
-  - [ ] Prompt templates (`SUMMARIZATION_PROMPT`, `UPDATE_PROMPT`, `TURN_PREFIX_PROMPT`).
-  - [ ] Summarizer orchestrator using injected host LLM completion functions.
-- [ ] **Compaction Topologies**:
-  - [ ] `RollingDeltaCompactor` (single rolling summary with iterative updates).
-  - [ ] `HierarchicalCompactor` (chunk-based summary tree).
-- [ ] **Compaction Unit Tests**: Deterministic test suites verifying boundaries, pruners, and topologies.
+  - [ ] Conversation serializer (text transcript for the summarizer).
+  - [ ] Prompt templates (`SUMMARIZATION_PROMPT`, `UPDATE_SUMMARIZATION_PROMPT`, `TURN_PREFIX_SUMMARIZATION_PROMPT`) and `PROMPT_VERSION`.
+  - [ ] Summarizer using the injected host LLM function (chunking, validation, retry, abort).
+- [ ] **Compaction Topology**: `RollingDeltaCompactor` (single rolling summary with iterative updates).
+- [ ] **Context Builder**: `context.ts` assembling summary + kept window + prune replacements.
+- [ ] **Engine Facade**: `engine.ts` with threshold trigger, micro → macro order, and overflow retry.
+- [ ] **Compaction Unit Tests**: Deterministic test suites verifying boundaries, pruners, extractors, and the topology.
+
+### Phase 1b: Evaluation & Hierarchical Topology (Deferred)
+- [ ] Evaluation harness: replay recorded sessions; measure tokens saved, summarizer cost, cache hit rate, continuation quality.
+- [ ] `HierarchicalCompactor` (chunk-based summary tree), once the preconditions in [architecture/compaction.md §8.3](architecture/compaction.md) are met.
 
 ### Phase 2: Session Storage & Tree Management
-- [ ] Append-only JSONL file store with parent-child linkage.
+- [ ] Append-only JSONL file store with parent-child linkage and a session header (message format + version).
 - [ ] Tree traversal, leaf pointers, and branch forking.
-- [ ] Context assembler integrating compaction summaries with active message windows.
+- [ ] Path resolution (leaf → root) feeding the compaction context builder.
