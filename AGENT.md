@@ -54,21 +54,24 @@ Key capabilities:
 | [docs/compaction.md](docs/compaction.md) | Research findings, comparative analysis of agents (Pi, Claude Code, Codex), and foundational compaction principles. | Human readers & Agents |
 | [docs/compaction-changes.md](docs/compaction-changes.md) | What changed in the compaction docs after review, and why. | Human readers & Agents |
 | [architecture/compaction.md](architecture/compaction.md) | Exhaustive technical specification, interfaces, algorithms, and implementation instructions for the compaction engine. | Implementing Agents |
-| `docs/session.md` | *(Planned)* Research and specifications for the session tree and branch management. | Human readers & Agents |
-| `architecture/session.md` | *(Planned)* Technical implementation specification for the session manager and context hydration layer. | Implementing Agents |
+| [docs/session.md](docs/session.md) | Research findings, comparative analysis of session management and memory across Claude Code, Codex, and Pi. | Human readers & Agents |
+| [architecture/session.md](architecture/session.md) | Exhaustive technical specification for the session manager, delayed flush, forking, discovery, and migrations. | Implementing Agents |
+| [architecture/memory.md](architecture/memory.md) | Exhaustive technical specification for cross-session persistent memory (`MemoryManager` / `MEMORY.md`). | Implementing Agents |
 
 ---
 
 ## Open Architectural Discussion Points
 
 The following topics are staged for upcoming discussions:
-- **Session Header & Message Format Versioning** (Phase 2): the header line that records the host message format and version, and how hosts migrate old sessions.
-- **Session Tree Branching Mechanics**: Traversals, fork points, and resolving paths from leaves to roots.
-- **Reference Accessors**: whether to ship optional `MessageAccessor` implementations for common host formats, and which ones first.
+- **Reference Accessors**: whether to ship optional `MessageAccessor` implementations for common host formats (OpenAI, Anthropic, Pi), and which ones first.
+- **Session Compression**: evaluate optional transparent Zstandard (`.zst`) compression for archived/historical session transcripts.
 
 Resolved:
 - ~~Canonical Message Representation~~: the engine does not define a message schema. Host messages are stored as-is and read through a `MessageAccessor` (see [docs/compaction-changes.md](docs/compaction-changes.md)).
 - ~~Toolchain Confirmation~~: confirmed as proposed, with Biome chosen for lint/format (see Toolchain & Conventions).
+- ~~Session Branching Strategy~~: adopted Claude-style file-based forking (`parentSessionId` linkage with new file) rather than complex in-file DAG trees (see [architecture/session.md](architecture/session.md)).
+- ~~Session Migration Framework~~: adopted sequential versioned migration pipeline starting at `version: 1` (see [architecture/session.md](architecture/session.md)).
+- ~~Cross-Session Memory Architecture~~: decoupled into a standalone `MemoryManager` class managing bounded `MEMORY.md` (see [architecture/memory.md](architecture/memory.md)).
 
 ---
 
@@ -76,7 +79,7 @@ Resolved:
 
 Use this checklist to track implementation progress across the project.
 
-### Phase 1: Compaction Engine (Current Phase)
+### Phase 1: Compaction Engine (Complete)
 - [x] **Core Types & Interfaces**: `types.ts` defining `MessageAccessor`, session entries (message, compaction, prune), settings, `ModelBudget`, and errors.
 - [x] **Test Fixture Accessors**: in-repo test message type covering separate tool-result messages, results inside user messages with injected text, and server-side tool calls.
 - [x] **Token Measurement**: `tokens.ts` with heuristic estimator and usage-aware context measurement.
@@ -100,11 +103,15 @@ Use this checklist to track implementation progress across the project.
 - [x] **Engine Facade**: `engine.ts` with threshold trigger, micro → macro order, and overflow retry.
 - [x] **Compaction Unit Tests**: Deterministic test suites verifying boundaries, pruners, extractors, and the topology.
 
-### Phase 1b: Evaluation & Hierarchical Topology (Deferred)
+### Phase 2: Session Manager & Cross-Session Memory (Current Phase)
+- [ ] **Session Types & Headers**: `src/session/types.ts` defining `SessionHeader` (version 1, title, metadata, parentSessionId), `SessionConfig`, and `SessionSummary`.
+- [ ] **Migration Pipeline**: `src/session/migrations.ts` with `MigrationRegistry` and runner.
+- [ ] **JSONL Storage & Delayed Flush**: `src/session/store.ts` and `src/session/manager.ts` implementing in-memory buffer, flush on first assistant completion, and append-only disk writes.
+- [ ] **Claude-Style Forking**: `sessionManager.fork()` creating isolated new files linked to parent sessions.
+- [ ] **Session Discovery API**: `src/session/discovery.ts` implementing `listSessions`, `searchSessions`, `deleteSession`, `findMostRecent`, and `renameSession`.
+- [ ] **Cross-Session Memory (`MemoryManager`)**: `src/memory/manager.ts` implementing `readMemory` with 200-line budget, `writeMemory`, `appendNote`, and `clear`.
+- [ ] **Session & Memory Unit Tests**: Full test suite mirroring compaction tests.
+
+### Phase 3: Evaluation & Hierarchical Topology (Deferred)
 - [ ] Evaluation harness: replay recorded sessions; measure tokens saved, summarizer cost, cache hit rate, continuation quality.
 - [ ] `HierarchicalCompactor` (chunk-based summary tree), once the preconditions in [architecture/compaction.md §8.3](architecture/compaction.md) are met.
-
-### Phase 2: Session Storage & Tree Management
-- [ ] Append-only JSONL file store with parent-child linkage and a session header (message format + version).
-- [ ] Tree traversal, leaf pointers, and branch forking.
-- [ ] Path resolution (leaf → root) feeding the compaction context builder.
