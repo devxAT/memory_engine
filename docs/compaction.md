@@ -120,7 +120,7 @@ To determine optimal performance and context retention, the engine supports alte
 
 ### B. Macro-Compaction Topology: Rolling Delta vs Hierarchical Tree
 - **Rolling Delta (Pi Model), Phase 1**: A single running summary updated iteratively across compaction events. Simple, fast, and token-efficient.
-- **Hierarchical Tree, deferred to Phase 1b**: Groups turns into chunks with dedicated summary nodes, with higher-level nodes summarizing lower-level ones. Deferred because it needs a richer data model (summaries covering entry ranges, several active summaries), its main benefit (localized retrieval) needs a retrieval mechanism that does not exist yet, and it cannot be judged without an evaluation harness and a rolling-delta baseline.
+- **Hierarchical Tree, deferred to Phase 3**: Groups turns into chunks with dedicated summary nodes, with higher-level nodes summarizing lower-level ones. Deferred because it needs a richer data model (summaries covering entry ranges, several active summaries), its main benefit (localized retrieval) needs a retrieval mechanism that does not exist yet, and it cannot be judged without an evaluation harness and a rolling-delta baseline.
 
 ### C. Evaluation Metrics
 Comparisons are made by replaying recorded sessions and measuring:

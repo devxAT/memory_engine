@@ -195,7 +195,7 @@ export interface CompactionSettings {
     /** Per-tool overrides; first match wins. */
     rules: PruneRule[];
   };
-  /** `"hierarchical"` is reserved for Phase 1b. */
+  /** `"hierarchical"` is reserved for Phase 3. */
   topology: "rolling_delta";
 }
 

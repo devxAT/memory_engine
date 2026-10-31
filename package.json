@@ -1,7 +1,7 @@
 {
   "name": "memory_engine",
   "version": "0.0.0",
-  "description": "Modular, decoupled memory engine for AI agents: tree-structured session storage and context compaction.",
+  "description": "Modular, decoupled memory engine for AI agents: append-only session storage, context compaction, and cross-session memory.",
   "private": true,
   "type": "module",
   "engines": {

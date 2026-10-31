@@ -37,7 +37,7 @@ src/compaction/
     └── rolling-delta.ts        # RollingDeltaCompactor (single updated checkpoint)
 ```
 
-The hierarchical topology is deferred to Phase 1b (see §8.3).
+The hierarchical topology is deferred to Phase 3 (see §8.3).
 
 **Design rules**
 1. The engine never defines, converts, or mutates the host's message format. It stores host messages as-is and reads them through an injected `MessageAccessor` (§2.1).
@@ -157,7 +157,7 @@ export type SessionEntry<TMsg> =
 export type NewEntry<E extends SessionEntryBase> = Omit<E, "id" | "parentId" | "timestamp">;
 ```
 
-The session file's first line records the host message format and version (e.g. `"messageFormat": "my-agent/messages@3"`) so the host can migrate old sessions when its type changes. That header is owned by the Phase 2 session spec. Compaction only requires that all message entries on a path share one format.
+The session file's first line records the host message format and version (e.g. `"messageFormat": "my-agent/messages@3"`) so the host can migrate old sessions when its type changes. The header and the migration rules are specified in [architecture/session.md §2.2 and §3.2](session.md). Compaction only requires that all message entries on a path share one format.
 
 ### 2.3 Injected Host Functions
 
@@ -203,7 +203,7 @@ export interface CompactionSettings {
     supersededReads: boolean;          // evict file reads made stale by a later read/modify of the same path
     rules: PruneRule[];                // per-tool overrides; first match wins
   };
-  topology: "rolling_delta";           // "hierarchical" reserved for Phase 1b
+  topology: "rolling_delta";           // "hierarchical" reserved for Phase 3
 }
 
 export const DEFAULT_COMPACTION_SETTINGS: CompactionSettings = {
@@ -749,7 +749,7 @@ export interface CompactionTopology<TMsg> {
 ```
 When building the context, only the latest compaction on the path is used. It supersedes earlier ones.
 
-### 8.3 Deferred: `HierarchicalCompactor` (Phase 1b)
+### 8.3 Deferred: `HierarchicalCompactor` (Phase 3)
 Not implemented in Phase 1. Preconditions before it is specified:
 - The evaluation harness exists and rolling delta has baseline numbers.
 - **Data model**: summary nodes record the range they cover (`coversFromEntryId`, `coversToEntryId`), a `level`, and child IDs, and the context builder supports several active summaries. This is added as a new entry type or optional fields; existing entries are unchanged.
@@ -766,7 +766,7 @@ The `CompactionTopology` interface already accepts it.
 
 ```typescript
 export function buildContext<TMsg>(
-  path: SessionEntry<TMsg>[],      // active branch, root → leaf (resolved by Phase 2; tests pass arrays)
+  path: SessionEntry<TMsg>[],      // root → leaf: SessionManager.getEntries() (one timeline per file); tests pass arrays
   accessor: MessageAccessor<TMsg>,
   extractors: ExtractorRegistry
 ): TMsg[];
@@ -816,25 +816,25 @@ export class CompactionEngine<TMsg> {
 ```
 `compact` measures `tokensBefore` itself and, for `reason: "overflow"`, passes `keepRecentTokens / 2` to the topology.
 
-Reference host loop:
+Reference host loop, using the `SessionManager` from [architecture/session.md](session.md):
 ```typescript
-async function runModelRequest(session: Session, engine: CompactionEngine<Msg>, budget: ModelBudget) {
-  const prune = engine.planMicro(session.path(), budget);
-  if (prune) session.append(prune);
+async function runModelRequest(session: SessionManager<Msg>, engine: CompactionEngine<Msg>, budget: ModelBudget) {
+  const prune = engine.planMicro(session.getEntries(), budget);
+  if (prune) session.appendEntry(prune);
 
-  if (engine.shouldCompact(session.path(), budget)) {
-    const outcome = await engine.compact(session.path(), budget, { reason: "threshold" });
-    if (outcome.status === "compacted") session.append(outcome.entry);
+  if (engine.shouldCompact(session.getEntries(), budget)) {
+    const outcome = await engine.compact(session.getEntries(), budget, { reason: "threshold" });
+    if (outcome.status === "compacted") session.appendEntry(outcome.entry);
   }
 
   try {
-    return await callModel(engine.buildContext(session.path()));
+    return await callModel(engine.buildContext(session.getEntries()));
   } catch (err) {
     if (!isContextOverflow(err)) throw err;
-    const outcome = await engine.compact(session.path(), budget, { reason: "overflow" });
+    const outcome = await engine.compact(session.getEntries(), budget, { reason: "overflow" });
     if (outcome.status !== "compacted") throw err;
-    session.append(outcome.entry);
-    return await callModel(engine.buildContext(session.path()));   // single retry
+    session.appendEntry(outcome.entry);
+    return await callModel(engine.buildContext(session.getEntries()));   // single retry
   }
 }
 ```
